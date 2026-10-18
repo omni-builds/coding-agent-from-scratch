@@ -2,6 +2,7 @@ import type Anthropic from '@anthropic-ai/sdk';
 
 export type Message = Anthropic.MessageParam;
 export type ContentBlock = Anthropic.ContentBlock;
+export type ToolResultBlock = Anthropic.ToolResultBlockParam;
 export type StopReason = Anthropic.Message['stop_reason'];
 
 export type ChatOptions = {

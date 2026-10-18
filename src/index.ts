@@ -19,15 +19,17 @@ while (true) {
   stdout.write('claude> ');
 
   try {
-    const { content, stopReason } = await chat({
-      system: SYSTEM_PROMPT,
-      messages: history,
-      onText: (delta) => stdout.write(delta),
-    });
-    history.push({ role: 'assistant', content });
-    stdout.write('\n');
+    // Keep calling the model until it stops asking for tools.
+    while (true) {
+      const { content, stopReason } = await chat({
+        system: SYSTEM_PROMPT,
+        messages: history,
+        onText: (delta) => stdout.write(delta),
+      });
+      history.push({ role: 'assistant', content });
+      stdout.write('\n');
 
-    if (stopReason === 'tool_use') {
+      if (stopReason !== 'tool_use') break;
       history.push({ role: 'user', content: await runTools(content) });
     }
   } catch (err) {

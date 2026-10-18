@@ -1,3 +1,5 @@
+import { readFile } from 'node:fs/promises';
+import { relative, resolve } from 'node:path';
 import type { ContentBlock, ToolResultBlock } from '../types.js';
 
 type ToolHandler = (input: any) => string | Promise<string>;
@@ -6,6 +8,16 @@ const toolsImplementation: Record<string, ToolHandler> = {
   log_text: ({ text }: { text: string }) => {
     console.log(text);
     return 'logged';
+  },
+  get_current_time: () => new Date().toISOString(),
+  read_file: async ({ path }: { path: string }) => {
+    const fullPath = resolve(process.cwd(), path);
+    const rel = relative(process.cwd(), fullPath);
+    // Keep the model inside the project directory.
+    if (rel.startsWith('..') || resolve(rel) === rel) {
+      throw new Error('Path is outside the project directory');
+    }
+    return readFile(fullPath, 'utf-8');
   },
 };
 

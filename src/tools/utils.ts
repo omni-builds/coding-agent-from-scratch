@@ -29,11 +29,23 @@ export const runTools = async (
   for (const block of blocks) {
     if (block.type !== 'tool_use') continue;
 
-    results.push({
-      type: 'tool_result',
-      tool_use_id: block.id,
-      content: await toolsImplementation[block.name](block.input),
-    });
+    try {
+      const handler = toolsImplementation[block.name];
+      if (!handler) throw new Error(`Unknown tool: ${block.name}`);
+
+      results.push({
+        type: 'tool_result',
+        tool_use_id: block.id,
+        content: await handler(block.input),
+      });
+    } catch (err) {
+      results.push({
+        type: 'tool_result',
+        tool_use_id: block.id,
+        content: err instanceof Error ? err.message : String(err),
+        is_error: true,
+      });
+    }
   }
 
   return results;

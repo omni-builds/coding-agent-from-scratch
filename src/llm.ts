@@ -21,7 +21,6 @@ export async function chat({
   stream.on('text', (delta) => onText?.(delta));
 
   const response = await stream.finalMessage();
-  console.log(JSON.stringify(response));
   const text = response.content
     .flatMap((block) => (block.type === 'text' ? [block.text] : []))
     .join('');

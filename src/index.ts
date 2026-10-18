@@ -15,6 +15,7 @@ while (true) {
   if (input === 'exit') break;
   if (!input) continue;
 
+  const turnStart = history.length;
   history.push({ role: 'user', content: input });
   stdout.write('claude> ');
 
@@ -33,7 +34,7 @@ while (true) {
       history.push({ role: 'user', content: await runTools(content) });
     }
   } catch (err) {
-    history.pop(); // drop the unanswered user turn so the next request stays valid
+    history.length = turnStart; // drop the whole turn so no tool_use lacks a tool_result
     console.error(
       `\nRequest failed: ${err instanceof Error ? err.message : err}\n`,
     );

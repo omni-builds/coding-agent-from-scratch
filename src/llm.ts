@@ -28,5 +28,7 @@ export async function chat({
 
   return {
     text,
+    stopReason: response.stop_reason,
+    content: response.content,
   };
 }

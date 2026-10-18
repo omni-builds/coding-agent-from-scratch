@@ -18,12 +18,12 @@ while (true) {
   stdout.write('claude> ');
 
   try {
-    const { text } = await chat({
+    const { content } = await chat({
       system: SYSTEM_PROMPT,
       messages: history,
       onText: (delta) => stdout.write(delta),
     });
-    history.push({ role: 'assistant', content: text });
+    history.push({ role: 'assistant', content });
     stdout.write('\n');
   } catch (err) {
     history.pop(); // drop the unanswered user turn so the next request stays valid

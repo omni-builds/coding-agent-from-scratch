@@ -8,6 +8,9 @@ import type { Message } from './types.js';
 const rl = readline.createInterface({ input: stdin, output: stdout });
 const history: Message[] = [];
 
+const confirm = async (message: string) =>
+  (await rl.question(`Allow ${message}? [y/N] `)).trim().toLowerCase() === 'y';
+
 console.log('Chat with Claude. Type "exit" to quit.\n');
 
 while (true) {
@@ -31,7 +34,7 @@ while (true) {
       stdout.write('\n');
 
       if (stopReason !== 'tool_use') break;
-      history.push({ role: 'user', content: await runTools(content) });
+      history.push({ role: 'user', content: await runTools(content, confirm) });
     }
   } catch (err) {
     history.length = turnStart; // drop the whole turn so no tool_use lacks a tool_result

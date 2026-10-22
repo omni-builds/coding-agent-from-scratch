@@ -2,7 +2,10 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
 import type { ContentBlock, ToolResultBlock } from '../types.js';
 
+const REQUIRES_APPROVAL = new Set(['write_file']);
+
 type ToolHandler = (input: any) => string | Promise<string>;
+export type Confirm = (message: string) => Promise<boolean>;
 
 const toolsImplementation: Record<string, ToolHandler> = {
   log_text: ({ text }: { text: string }) => {
@@ -33,6 +36,7 @@ const toolsImplementation: Record<string, ToolHandler> = {
 
 export const runTools = async (
   blocks: ContentBlock[],
+  confirm: Confirm,
 ): Promise<ToolResultBlock[]> => {
   const results: ToolResultBlock[] = [];
 
@@ -42,6 +46,19 @@ export const runTools = async (
     try {
       const handler = toolsImplementation[block.name];
       if (!handler) throw new Error(`Unknown tool: ${block.name}`);
+
+      if (REQUIRES_APPROVAL.has(block.name)) {
+        const call = `${block.name} ${JSON.stringify(block.input).slice(0, 200)}`;
+        if (!(await confirm(call))) {
+          results.push({
+            type: 'tool_result',
+            tool_use_id: block.id,
+            content: 'The user denied permission to run this tool.',
+            is_error: true,
+          });
+          continue;
+        }
+      }
 
       results.push({
         type: 'tool_result',

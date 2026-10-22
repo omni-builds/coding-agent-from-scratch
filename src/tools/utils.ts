@@ -1,5 +1,5 @@
-import { readFile } from 'node:fs/promises';
-import { relative, resolve } from 'node:path';
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { dirname, relative, resolve } from 'node:path';
 import type { ContentBlock, ToolResultBlock } from '../types.js';
 
 type ToolHandler = (input: any) => string | Promise<string>;
@@ -18,6 +18,16 @@ const toolsImplementation: Record<string, ToolHandler> = {
       throw new Error('Path is outside the project directory');
     }
     return readFile(fullPath, 'utf-8');
+  },
+  write_file: async ({ path, content }: { path: string; content: string }) => {
+    const fullPath = resolve(process.cwd(), path);
+    const rel = relative(process.cwd(), fullPath);
+    if (rel.startsWith('..') || resolve(rel) === rel) {
+      throw new Error('Path is outside the project directory');
+    }
+    await mkdir(dirname(fullPath), { recursive: true });
+    await writeFile(fullPath, content, 'utf-8');
+    return `Wrote ${content.length} characters to ${path}`;
   },
 };
 

@@ -9,7 +9,7 @@ const rl = readline.createInterface({ input: stdin, output: stdout });
 const history: Message[] = [];
 
 const confirm = async (message: string) =>
-  (await rl.question(`Allow ${message}? [y/N] `)).trim().toLowerCase() === 'y';
+  (await rl.question(`${message} [y/N] `)).trim().toLowerCase() === 'y';
 
 console.log('Chat with Claude. Type "exit" to quit.\n');
 

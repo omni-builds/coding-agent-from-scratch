@@ -47,9 +47,12 @@ export const runTools = async (
       const handler = toolsImplementation[block.name];
       if (!handler) throw new Error(`Unknown tool: ${block.name}`);
 
+      console.log(
+        `[tool] ${block.name} ${JSON.stringify(block.input).slice(0, 200)}`,
+      );
+
       if (REQUIRES_APPROVAL.has(block.name)) {
-        const call = `${block.name} ${JSON.stringify(block.input).slice(0, 200)}`;
-        if (!(await confirm(call))) {
+        if (!(await confirm('Allow this tool call?'))) {
           results.push({
             type: 'tool_result',
             tool_use_id: block.id,

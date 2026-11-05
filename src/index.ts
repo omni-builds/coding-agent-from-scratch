@@ -1,6 +1,6 @@
 import * as readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
-import { SYSTEM_PROMPT } from './constants.js';
+import { SYSTEM_PROMPT, MAX_TOOL_ROUNDS } from './constants.js';
 import { chat } from './llm.js';
 import { runTools } from './tools/utils.js';
 import type { Message } from './types.js';
@@ -23,6 +23,7 @@ while (true) {
   stdout.write('claude> ');
 
   try {
+    let toolRounds = 0;
     // Keep calling the model until it stops asking for tools.
     while (true) {
       const { content, stopReason } = await chat({
@@ -34,7 +35,11 @@ while (true) {
       stdout.write('\n');
 
       if (stopReason !== 'tool_use') break;
+      if (toolRounds >= MAX_TOOL_ROUNDS) {
+        throw new Error(`Stopped after ${toolRounds} tool rounds`);
+      }
       history.push({ role: 'user', content: await runTools(content, confirm) });
+      toolRounds++;
     }
   } catch (err) {
     history.length = turnStart; // drop the whole turn so no tool_use lacks a tool_result

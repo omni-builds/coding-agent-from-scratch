@@ -2,6 +2,8 @@
 
 A small AI coding agent for your terminal, written in TypeScript on top of the Claude API. No agent framework: just a chat loop, a few tools, and a permission check. The whole thing is about 250 lines.
 
+🎬 **Watch the video:** [Build an AI Coding Agent from Scratch in TypeScript (No Framework)](https://youtu.be/eTiCrkRwWHs)
+
 It is the code for a code-along video course. Each step of the course is a tagged commit, so you can build it yourself or jump to any point.
 
 ## Requirements
@@ -47,19 +49,20 @@ To check the types, run `npm run typecheck`.
 
 1. **Chat:** `src/index.ts` reads your input, keeps the `history` array (the API is stateless) and streams the reply.
 2. **Tools:** the model never runs anything itself. We describe each tool, the model replies with a `tool_use` request, we run it and send back a `tool_result`. This repeats in a loop until the model stops asking.
-3. **Permissions:** tools listed in `REQUIRES_APPROVAL` (currently `write_file`) ask `[y/N]` before they run. A denial is sent back to the model as an error result.
-4. **Visibility:** every tool call is printed as a `[tool]` line, and the system prompt tells the model it is a coding agent.
+3. **Round limit:** the tool loop stops after `MAX_TOOL_ROUNDS` rounds (10) per message. It throws, and the same `catch` that handles failed requests rolls the whole turn back, so the history stays valid.
+4. **Permissions:** tools listed in `REQUIRES_APPROVAL` (currently `write_file`) ask `[y/N]` before they run. A denial is sent back to the model as an error result.
+5. **Visibility:** every tool call is printed as a `[tool]` line, and the system prompt tells the model it is a coding agent.
 
 ## Project structure
 
-| File | Purpose |
-|---|---|
-| `src/index.ts` | Terminal chat loop, tool loop and approval prompt |
-| `src/llm.ts` | `chat()`: one streaming call to the Claude API |
-| `src/types.ts` | Shared types |
-| `src/constants.ts` | Model, token limit and system prompt |
-| `src/tools/constants.ts` | Tool definitions the model sees |
-| `src/tools/utils.ts` | Tool implementations, approval check and `runTools` |
+| File                     | Purpose                                                                 |
+| ------------------------ | ----------------------------------------------------------------------- |
+| `src/index.ts`           | Terminal chat loop, tool loop with its round limit, and approval prompt |
+| `src/llm.ts`             | `chat()`: one streaming call to the Claude API                          |
+| `src/types.ts`           | Shared types                                                            |
+| `src/constants.ts`       | Model, token limit, tool round limit and system prompt                  |
+| `src/tools/constants.ts` | Tool definitions the model sees                                         |
+| `src/tools/utils.ts`     | Tool implementations, approval check and `runTools`                     |
 
 Tools: `get_current_time`, `read_file`, `write_file` and `log_text`. File tools only accept paths inside the project folder.
 
@@ -72,12 +75,14 @@ git checkout stage-2-step-4
 git checkout master   # back to the finished version
 ```
 
-| Stage | Tags |
-|---|---|
-| 1. Streaming chat | `stage-1` |
-| 2. Tools | `stage-2-step-1` to `stage-2-step-6` |
-| 3. Writing files, with permissions | `stage-3-step-1`, `stage-3-step-2` |
-| 4. System prompt and visible tool calls | `stage-4` |
+| Stage                                   | Tags                                 |
+| --------------------------------------- | ------------------------------------ |
+| 1. Streaming chat                       | `stage-1`                            |
+| 2. Tools                                | `stage-2-step-1` to `stage-2-step-6` |
+| 3. Writing files, with permissions      | `stage-3-step-1`, `stage-3-step-2`   |
+| 4. System prompt and visible tool calls | `stage-4`                            |
+
+The round limit is one more commit on `master`, after `stage-4` ("Limit the tool loop to 10 rounds per turn"), and it has no tag. Check out `master` to get it.
 
 The model's wording will differ from the videos, and that's fine.
 
@@ -86,5 +91,6 @@ The model's wording will differ from the videos, and that's fine.
 - Approval is per call, with no "always allow".
 - `read_file` doesn't ask, so the agent can read any file in the folder, including `.env`.
 - The history grows every turn and is never trimmed.
+- The round limit counts rounds of the loop, not individual tool calls, and it can't undo files the agent already wrote before it stopped.
 
-These are left as exercises. Ideas: a deny list for `.env`, `list_files` and `run_command` tools, an `edit_file` tool, a round limit for the tool loop, and Ctrl+C to cancel a reply.
+These are left as exercises. Ideas: a deny list for `.env`, `list_files` and `run_command` tools, an `edit_file` tool, and Ctrl+C to cancel a reply.

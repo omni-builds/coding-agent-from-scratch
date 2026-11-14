@@ -20,6 +20,8 @@ while (true) {
 
   const turnStart = history.length;
   history.push({ role: 'user', content: input });
+  const estimatedTokens = Math.ceil(JSON.stringify(history).length / 4);
+  console.log(`[context] about ${estimatedTokens} tokens in the history sent to the model`);
   stdout.write('claude> ');
 
   try {

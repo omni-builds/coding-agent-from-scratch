@@ -17,22 +17,20 @@ while (true) {
   if (input === 'exit') break;
   if (!input) continue;
 
-  const turnStart = history.length;
-  history.push({ role: 'user', content: input });
-  const estimatedTokens = Math.ceil(JSON.stringify(history).length / 4);
-  console.log(`[context] about ${estimatedTokens} tokens in the user-facing history`);
-
   try {
     const answer = await runIsolatedAgent({
       name: 'coder',
       system: SYSTEM_PROMPT,
       task: input,
+      history,
       confirm,
     });
-    history.push({ role: 'assistant', content: answer });
+    history.push(
+      { role: 'user', content: input },
+      { role: 'assistant', content: answer },
+    );
     stdout.write(`claude> ${answer}\n`);
   } catch (err) {
-    history.length = turnStart;
     console.error(
       `\nRequest failed: ${err instanceof Error ? err.message : err}\n`,
     );

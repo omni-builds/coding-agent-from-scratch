@@ -1,8 +1,7 @@
 import * as readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
-import { SYSTEM_PROMPT, MAX_TOOL_ROUNDS } from './constants.js';
-import { chat } from './llm.js';
-import { runTools } from './tools/utils.js';
+import { SYSTEM_PROMPT } from './constants.js';
+import { runIsolatedAgent } from './agents/run-agent.js';
 import type { Message } from './types.js';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -21,30 +20,19 @@ while (true) {
   const turnStart = history.length;
   history.push({ role: 'user', content: input });
   const estimatedTokens = Math.ceil(JSON.stringify(history).length / 4);
-  console.log(`[context] about ${estimatedTokens} tokens in the history sent to the model`);
-  stdout.write('claude> ');
+  console.log(`[context] about ${estimatedTokens} tokens in the user-facing history`);
 
   try {
-    let toolRounds = 0;
-    // Keep calling the model until it stops asking for tools.
-    while (true) {
-      const { content, stopReason } = await chat({
-        system: SYSTEM_PROMPT,
-        messages: history,
-        onText: (delta) => stdout.write(delta),
-      });
-      history.push({ role: 'assistant', content });
-      stdout.write('\n');
-
-      if (stopReason !== 'tool_use') break;
-      if (toolRounds >= MAX_TOOL_ROUNDS) {
-        throw new Error(`Stopped after ${toolRounds} tool rounds`);
-      }
-      history.push({ role: 'user', content: await runTools(content, confirm) });
-      toolRounds++;
-    }
+    const answer = await runIsolatedAgent({
+      name: 'coder',
+      system: SYSTEM_PROMPT,
+      task: input,
+      confirm,
+    });
+    history.push({ role: 'assistant', content: answer });
+    stdout.write(`claude> ${answer}\n`);
   } catch (err) {
-    history.length = turnStart; // drop the whole turn so no tool_use lacks a tool_result
+    history.length = turnStart;
     console.error(
       `\nRequest failed: ${err instanceof Error ? err.message : err}\n`,
     );

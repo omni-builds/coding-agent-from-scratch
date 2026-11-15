@@ -1,7 +1,7 @@
 import * as readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { runSupervisor } from './agents/supervisor.js';
-import { createSharedState } from './context/shared-state.js';
+import { createSharedState, resetSharedState } from './context/shared-state.js';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
 const state = createSharedState();
@@ -9,12 +9,17 @@ const state = createSharedState();
 const confirm = async (message: string) =>
   (await rl.question(`${message} [y/N] `)).trim().toLowerCase() === 'y';
 
-console.log('Chat with Claude. Type "exit" to quit.\n');
+console.log('Chat with Claude. Type "exit" to quit, "reset" to clear the shared state.\n');
 
 while (true) {
   const input = (await rl.question('you> ')).trim();
   if (input === 'exit') break;
   if (!input) continue;
+  if (input === 'reset') {
+    resetSharedState(state);
+    console.log('Shared state cleared.\n');
+    continue;
+  }
 
   try {
     const answer = await runSupervisor(input, state, { confirm });

@@ -1,10 +1,10 @@
 import * as readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { runSupervisor } from './agents/supervisor.js';
-import type { Message } from './types.js';
+import { createSharedState } from './context/shared-state.js';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
-const history: Message[] = [];
+const state = createSharedState();
 
 const confirm = async (message: string) =>
   (await rl.question(`${message} [y/N] `)).trim().toLowerCase() === 'y';
@@ -17,11 +17,7 @@ while (true) {
   if (!input) continue;
 
   try {
-    const answer = await runSupervisor(input, history, { confirm });
-    history.push(
-      { role: 'user', content: input },
-      { role: 'assistant', content: answer },
-    );
+    const answer = await runSupervisor(input, state, { confirm });
     stdout.write(`claude> ${answer}\n`);
   } catch (err) {
     console.error(

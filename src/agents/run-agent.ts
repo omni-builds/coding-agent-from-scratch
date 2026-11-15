@@ -8,8 +8,6 @@ export type AgentRunOptions = {
   name: string;
   system: string;
   task: string;
-  /** Earlier user requests and final answers. Tool transcripts are never part of it. */
-  history?: Message[];
   /** Pass [] for an agent that must not call tools. */
   tools?: Anthropic.Tool[];
   confirm: Confirm;
@@ -17,19 +15,18 @@ export type AgentRunOptions = {
 };
 
 /**
- * One specialist. Its message list starts from the earlier turns (if any)
- * and is thrown away when this function returns. Only the final text leaves the function.
+ * One specialist. Its message list starts empty and is thrown away
+ * when this function returns. Only the final text leaves the function.
  */
 export async function runIsolatedAgent({
   name,
   system,
   task,
-  history = [],
   tools,
   confirm,
   log = console.log,
 }: AgentRunOptions): Promise<string> {
-  const messages: Message[] = [...history, { role: 'user', content: task }];
+  const messages: Message[] = [{ role: 'user', content: task }];
   const estimatedTokens = Math.ceil(JSON.stringify(messages).length / 4);
   log(`[agent] ${name}: about ${estimatedTokens} tokens sent to the model`);
   let lastText = '';

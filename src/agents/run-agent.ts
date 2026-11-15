@@ -2,6 +2,7 @@ import { MAX_TOOL_ROUNDS } from '../constants.js';
 import { chat } from '../llm.js';
 import type { Message } from '../types.js';
 import { runTools, type Confirm } from '../tools/utils.js';
+import type Anthropic from '@anthropic-ai/sdk';
 
 export type AgentRunOptions = {
   name: string;
@@ -9,6 +10,8 @@ export type AgentRunOptions = {
   task: string;
   /** Earlier user requests and final answers. Tool transcripts are never part of it. */
   history?: Message[];
+  /** Pass [] for an agent that must not call tools. */
+  tools?: Anthropic.Tool[];
   confirm: Confirm;
   log?: (line: string) => void;
 };
@@ -22,6 +25,7 @@ export async function runIsolatedAgent({
   system,
   task,
   history = [],
+  tools,
   confirm,
   log = console.log,
 }: AgentRunOptions): Promise<string> {
@@ -32,11 +36,11 @@ export async function runIsolatedAgent({
   let toolRounds = 0;
 
   while (true) {
-    const { content, stopReason, text } = await chat({ system, messages });
+    const { content, stopReason, text } = await chat({ system, messages, tools });
     lastText = text;
     messages.push({ role: 'assistant', content });
 
-    if (stopReason !== 'tool_use') break;
+    if (stopReason !== 'tool_use' || (tools && tools.length === 0)) break;
     if (toolRounds >= MAX_TOOL_ROUNDS) {
       throw new Error(`Stopped after ${toolRounds} tool rounds`);
     }

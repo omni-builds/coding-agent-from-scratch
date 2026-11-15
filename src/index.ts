@@ -1,7 +1,6 @@
 import * as readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
-import { SYSTEM_PROMPT } from './constants.js';
-import { runIsolatedAgent } from './agents/run-agent.js';
+import { runTurn } from './agents/turn.js';
 import type { Message } from './types.js';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
@@ -18,13 +17,7 @@ while (true) {
   if (!input) continue;
 
   try {
-    const answer = await runIsolatedAgent({
-      name: 'coder',
-      system: SYSTEM_PROMPT,
-      task: input,
-      history,
-      confirm,
-    });
+    const answer = await runTurn(input, history, { confirm });
     history.push(
       { role: 'user', content: input },
       { role: 'assistant', content: answer },

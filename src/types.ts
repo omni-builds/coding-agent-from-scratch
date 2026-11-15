@@ -9,6 +9,7 @@ export type ChatOptions = {
   system: string;
   messages: Message[];
   onText?: (delta: string) => void;
+  tools?: Anthropic.Tool[];
 };
 
 export type ChatResult = {

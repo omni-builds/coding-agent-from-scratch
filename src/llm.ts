@@ -1,7 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { MAX_TOKENS, MODEL } from './constants.js';
 import type { ChatOptions, ChatResult } from './types.js';
-import { tools } from './tools/constants.js';
+import { tools as defaultTools } from './tools/constants.js';
 
 const client = new Anthropic(); // reads ANTHROPIC_API_KEY from the environment
 
@@ -9,13 +9,14 @@ export async function chat({
   system,
   messages,
   onText,
+  tools = defaultTools,
 }: ChatOptions): Promise<ChatResult> {
   const stream = client.messages.stream({
     model: MODEL,
     max_tokens: MAX_TOKENS,
     system,
     messages,
-    tools,
+    ...(tools.length > 0 ? { tools } : {}),
   });
 
   stream.on('text', (delta) => onText?.(delta));

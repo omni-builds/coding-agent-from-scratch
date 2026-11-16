@@ -30,6 +30,19 @@ export const tools: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'save_finding',
+    description:
+      'Appends a detailed finding to .agent/findings.md and returns a short pointer. Put long results here instead of in your reply.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Short title for the finding' },
+        body: { type: 'string', description: 'The detailed finding' },
+      },
+      required: ['title', 'body'],
+    },
+  },
+  {
     name: 'write_file',
     description:
       'Writes the given content to a file, creating it (and any missing folders) or overwriting it. The path is relative to the project root.',

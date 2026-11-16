@@ -1,5 +1,15 @@
 import { SYSTEM_PROMPT } from '../constants.js';
 
+export const OUTPUT_FORMAT = `Return only this shape:
+## Status
+[SUCCESS | PARTIAL_SUCCESS | ERROR]
+## Completed Tasks
+- [Task you finished, in the wording of your instruction]
+## Key Insights
+- [One short finding. No transcript.]
+## Generated Files
+- path -- one-line description, or "none"`;
+
 export const plannerPrompt = `You are the planner. You do not edit files or call tools. The coder does: it can read and write files and get the current time.
 Write a plan for the coder. Do not answer the request yourself.
 If the request changes files, break it into a checklist the coder can mark done:
@@ -11,7 +21,11 @@ Keep the plan short.`;
 export const coderPrompt = `${SYSTEM_PROMPT}
 
 You are the coder. You work in your own context. The supervisor never sees this transcript, only your final summary.
-Keep the summary short. Name files you changed and what is still unfinished.
+
+Your final reply is a summary, not a dump. Anything past 6,000 characters is cut.
+
+${OUTPUT_FORMAT}
+
 Put detailed findings in save_finding. The tool returns a pointer. Do not paste the finding back into the summary.
 Earlier findings, if any, are in .agent/findings.md. Open it with read_file when you need that detail.`;
 

@@ -5,6 +5,8 @@ import { addAgentResult, renderSharedState, type SharedState } from '../context/
 import type { Confirm } from '../tools/utils.js';
 
 const MAX_SUPERVISOR_STEPS = 8;
+// The coder's summary is cut to this before it reaches the shared state. About 1,500 tokens.
+const MAX_SUMMARY_CHARS = 6_000;
 
 export type SupervisorOptions = {
   confirm: Confirm;
@@ -63,7 +65,7 @@ export async function runSupervisor(
       confirm,
       log,
     });
-    addAgentResult(state, 'coder', answer);
+    addAgentResult(state, 'coder', answer.slice(0, MAX_SUMMARY_CHARS));
   }
 
   const stopped = 'Stopped after the step limit. The shared state has what was finished.';

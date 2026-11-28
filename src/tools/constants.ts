@@ -30,6 +30,23 @@ export const tools: Anthropic.Tool[] = [
     },
   },
   {
+    name: 'save_finding',
+    description:
+      'Saves a detailed finding to its own file in .agent/findings/ and adds it to the findings index the supervisor reads. Put long results here instead of in your reply.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        title: { type: 'string', description: 'Short title for the finding' },
+        description: {
+          type: 'string',
+          description: 'One line saying what is in the finding, so the supervisor can tell when it is needed',
+        },
+        body: { type: 'string', description: 'The detailed finding' },
+      },
+      required: ['title', 'description', 'body'],
+    },
+  },
+  {
     name: 'write_file',
     description:
       'Writes the given content to a file, creating it (and any missing folders) or overwriting it. The path is relative to the project root.',

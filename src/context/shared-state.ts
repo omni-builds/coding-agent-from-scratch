@@ -1,3 +1,5 @@
+import { renderFindingsIndex } from './store.js';
+
 export type SharedState = {
   /** The user's requests and each agent's final summary, never a transcript. */
   agentNotes: string;
@@ -26,4 +28,5 @@ export const renderSharedState = (state: SharedState, userRequest: string) =>
     `User request:\n${userRequest}`,
     `Full plan:\n${state.fullPlan || '(none yet)'}`,
     `agent notes:\n${state.agentNotes || '(none yet)'}`,
+    `Findings (path: what is in it):\n${renderFindingsIndex() || '(none yet)'}`,
   ].join('\n\n');

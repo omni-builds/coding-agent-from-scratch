@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, relative, resolve } from 'node:path';
+import { saveFinding } from '../context/store.js';
 import type { ContentBlock, ToolResultBlock } from '../types.js';
 
 const REQUIRES_APPROVAL = new Set(['write_file']);
@@ -22,6 +23,8 @@ const toolsImplementation: Record<string, ToolHandler> = {
     }
     return readFile(fullPath, 'utf-8');
   },
+  save_finding: ({ title, description, body }: { title: string; description: string; body: string }) =>
+    saveFinding(title, description, body),
   write_file: async ({ path, content }: { path: string; content: string }) => {
     const fullPath = resolve(process.cwd(), path);
     const rel = relative(process.cwd(), fullPath);

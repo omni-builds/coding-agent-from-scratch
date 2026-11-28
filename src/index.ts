@@ -2,9 +2,11 @@ import * as readline from 'node:readline/promises';
 import { stdin, stdout } from 'node:process';
 import { runSupervisor } from './agents/supervisor.js';
 import { createSharedState } from './context/shared-state.js';
+import { resetFindings } from './context/store.js';
 
 const rl = readline.createInterface({ input: stdin, output: stdout });
 const state = createSharedState();
+await resetFindings();
 
 const confirm = async (message: string) =>
   (await rl.question(`${message} [y/N] `)).trim().toLowerCase() === 'y';

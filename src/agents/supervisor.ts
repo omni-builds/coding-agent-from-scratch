@@ -1,8 +1,10 @@
-import { coderPrompt, plannerPrompt } from './prompts.js';
-import { planHasCoderWork } from './decision.js';
+import { coderPrompt, plannerPrompt, supervisorPrompt } from './prompts.js';
+import { parseDecision, planHasCoderWork } from './decision.js';
 import { runIsolatedAgent } from './run-agent.js';
 import { addAgentResult, renderSharedState, type SharedState } from '../context/shared-state.js';
 import type { Confirm } from '../tools/utils.js';
+
+const MAX_SUPERVISOR_STEPS = 8;
 
 export type SupervisorOptions = {
   confirm: Confirm;
@@ -15,32 +17,56 @@ export async function runSupervisor(
   { confirm, log = console.log }: SupervisorOptions,
 ): Promise<string> {
   addAgentResult(state, 'user', input);
-  const plan = await runIsolatedAgent({
-    name: 'planner',
-    system: plannerPrompt,
-    task: renderSharedState(state, input),
-    tools: [],
-    confirm,
-    log,
-  });
-  state.fullPlan = plan;
+  for (let step = 1; step <= MAX_SUPERVISOR_STEPS; step += 1) {
+    // Only the supervisor reads the shared state. The planner and coder get the instruction it writes.
+    const decisionText = await runIsolatedAgent({
+      name: 'supervisor',
+      system: supervisorPrompt,
+      task: renderSharedState(state, input),
+      tools: [],
+      confirm,
+      log,
+    });
+    const decision = parseDecision(decisionText);
+    log(`[supervisor] ${decision.action}`);
 
-  if (planHasCoderWork(plan)) {
-    const approved = await confirm('Plan includes file work. Continue?');
-    if (!approved) {
-      const stopped = 'Stopped before making changes. The plan is on the shared state.';
-      addAgentResult(state, 'planner', stopped);
-      return stopped;
+    if (decision.action === 'respond') {
+      addAgentResult(state, 'supervisor', decision.instruction);
+      return decision.instruction;
     }
+
+    if (decision.action === 'planner') {
+      const plan = await runIsolatedAgent({
+        name: 'planner',
+        system: plannerPrompt,
+        task: `${decision.instruction}\n\nOriginal request:\n${input}`,
+        tools: [],
+        confirm,
+        log,
+      });
+      state.fullPlan = plan;
+      if (planHasCoderWork(plan)) {
+        const approved = await confirm('Plan includes file work. Continue?');
+        if (!approved) {
+          const stopped = 'Stopped before making changes. The plan is on the shared state.';
+          addAgentResult(state, 'supervisor', stopped);
+          return stopped;
+        }
+      }
+      continue;
+    }
+
+    const answer = await runIsolatedAgent({
+      name: 'coder',
+      system: coderPrompt,
+      task: decision.instruction,
+      confirm,
+      log,
+    });
+    addAgentResult(state, 'coder', answer);
   }
 
-  const answer = await runIsolatedAgent({
-    name: 'coder',
-    system: coderPrompt,
-    task: renderSharedState(state, input),
-    confirm,
-    log,
-  });
-  addAgentResult(state, 'coder', answer);
-  return answer;
+  const stopped = 'Stopped after the step limit. The shared state has what was finished.';
+  addAgentResult(state, 'supervisor', stopped);
+  return stopped;
 }

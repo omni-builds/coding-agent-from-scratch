@@ -1,5 +1,7 @@
 export const DEFAULT_MODEL = 'claude-sonnet-5-5';
 export const MODEL = process.env.ANTHROPIC_MODEL || DEFAULT_MODEL;
+// A smaller, faster model is enough for summarizing notes.
+export const SUMMARY_MODEL = process.env.ANTHROPIC_SUMMARY_MODEL || 'claude-haiku-5-5';
 export const MAX_TOKENS = 4096;
 export const MAX_TOOL_ROUNDS = 10;
 export const SYSTEM_PROMPT = `You are a coding agent working in the user's project directory (platform: ${process.platform}).

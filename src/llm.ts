@@ -10,10 +10,12 @@ export async function chat({
   messages,
   onText,
   tools = defaultTools,
+  model = MODEL,
+  maxTokens = MAX_TOKENS,
 }: ChatOptions): Promise<ChatResult> {
   const stream = client.messages.stream({
-    model: MODEL,
-    max_tokens: MAX_TOKENS,
+    model,
+    max_tokens: maxTokens,
     system,
     messages,
     ...(tools.length > 0 ? { tools } : {}),

@@ -10,6 +10,10 @@ export type ChatOptions = {
   messages: Message[];
   onText?: (delta: string) => void;
   tools?: Anthropic.Tool[];
+  /** Defaults to MODEL. */
+  model?: string;
+  /** Defaults to MAX_TOKENS. */
+  maxTokens?: number;
 };
 
 export type ChatResult = {

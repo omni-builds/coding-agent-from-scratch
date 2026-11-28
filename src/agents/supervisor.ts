@@ -2,9 +2,12 @@ import { coderPrompt, plannerPrompt, supervisorPrompt } from './prompts.js';
 import { parseDecision, planHasCoderWork } from './decision.js';
 import { runIsolatedAgent } from './run-agent.js';
 import { addAgentResult, renderSharedState, type SharedState } from '../context/shared-state.js';
+import { compactNotes } from '../context/compact.js';
 import type { Confirm } from '../tools/utils.js';
 
 const MAX_SUPERVISOR_STEPS = 8;
+// The coder's summary is cut to this before it reaches the shared state. About 1,500 tokens.
+const MAX_SUMMARY_CHARS = 6_000;
 
 export type SupervisorOptions = {
   confirm: Confirm;
@@ -18,6 +21,8 @@ export async function runSupervisor(
 ): Promise<string> {
   addAgentResult(state, 'user', input);
   for (let step = 1; step <= MAX_SUPERVISOR_STEPS; step += 1) {
+    // Summarize older notes first if they are over the limit, so the supervisor reads a short state.
+    await compactNotes(state, log);
     // Only the supervisor reads the shared state. The planner and coder get the instruction it writes.
     const decisionText = await runIsolatedAgent({
       name: 'supervisor',
@@ -63,7 +68,7 @@ export async function runSupervisor(
       confirm,
       log,
     });
-    addAgentResult(state, 'coder', answer);
+    addAgentResult(state, 'coder', answer.slice(0, MAX_SUMMARY_CHARS));
   }
 
   const stopped = 'Stopped after the step limit. The shared state has what was finished.';
